@@ -126,7 +126,7 @@ This code generates 5000 datasets and saves the mu hat and p-value for each data
 
 ```{r}
 sim_df = 
-  rerun(100, sim_mean_p(s_mu = 0)) %>% #replace with n=5000
+  rerun(5000, sim_mean_p(s_mu = 0)) %>% #replace with n=5000
   bind_rows() %>% 
   select(estimate, p.value)
 ```
@@ -137,7 +137,7 @@ Repeat the above for μ={1,2,3,4,5,6}
 sim_df_2 = 
   tibble(s_mu = c(0:6)) %>% 
   mutate(
-    output_lists = map(.x = s_mu, ~rerun(100, sim_mean_p(s_mu = .x))), #replace with 5000
+    output_lists = map(.x = s_mu, ~rerun(5000, sim_mean_p(s_mu = .x))), #replace with 5000
     estimate_dfs = map(output_lists, bind_rows)) %>% 
   select(-output_lists) %>% 
   unnest(estimate_dfs) %>%
