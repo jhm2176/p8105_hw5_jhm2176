@@ -12,6 +12,7 @@ library(readxl)
 library(ggridges)
 library(patchwork)
 library(readr)
+library(broom)
 
 library(p8105.datasets)
 
@@ -76,28 +77,19 @@ For the city of Baltimore, MD, use the prop.test function to estimate the propor
 city_homicides %>%
   filter(city_state == "Baltimore, MD")
 
-baltimore = prop.test(x = 1825, n = 2827, conf.level = 0.95, correct = FALSE) %>% broom::tidy()
+prop.test(x = 1825, n = 2827, conf.level = 0.95, correct = FALSE) %>% broom::tidy()
 ```
-
 
 Now run prop.test for each of the cities in your dataset, and extract both the proportion of unsolved homicides and the confidence interval for each. Do this within a “tidy” pipeline, making use of purrr::map, purrr::map2, list columns and unnest as necessary to create a tidy dataframe with estimated proportions and CIs for each city.
 
 ```{r}
-prop_test_fx = function(city_state) {
-  
-  test = prop.test(x = n_unsolved_homicides, n = n_homicides, conf.level = 0.95, correct = FALSE)
-  test
-  
-}
-
-prop_test_fx("Baltimore, MD")
-
-
-for(i in 1:ncol(data1)) {       # for-loop over columns
-  data1[ , i] <- data1[ , i] + 10
-}
-
-#output = map(df, function)
+city_homicides %>% 
+  mutate(newcol = map2(n_unsolved_homicides, n_homicides,  ~ prop.test(.x, n = .y) %>% 
+                  {tibble(estimate = .[["estimate"]],
+                         CI_lower = .[["conf.int"]][[1]], 
+                         CI_upper = .[["conf.int"]][[2]])})) %>%
+  unnest() %>%
+  select(-n_homicides, -n_unsolved_homicides)
 ```
 
 Create a plot that shows the estimates and CIs for each city – check out geom_errorbar for a way to add error bars based on the upper and lower limits. Organize cities according to the proportion of unsolved homicides.
