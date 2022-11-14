@@ -1,7 +1,7 @@
 ---
 title: "Homework 5"
 author: "Jenesis Merriman"
-date: "November 14, 2022"
+date: "November 16, 2022"
 output: github_document
 ---
 
@@ -66,8 +66,7 @@ city_homicides =
   homicides %>%
   group_by(city_state) %>%
   summarize(n_homicides = n(),
-            n_unsolved_homicides = sum(disposition %in% c("Closed without arrest","Open/No arrest"))) 
-#%>% arrange(desc(n_homicides))
+            n_unsolved_homicides = sum(disposition %in% c("Closed without arrest","Open/No arrest")))
 ```
 
 For the city of Baltimore, MD, use the prop.test function to estimate the proportion of homicides that are unsolved; save the output of prop.test as an R object, apply the broom::tidy to this object and pull the estimated proportion and confidence intervals from the resulting tidy dataframe.
@@ -79,12 +78,11 @@ city_homicides %>%
                         broom::tidy())) %>% unnest() %>%
   select(city_state, estimate, "CI_lower" = conf.low, "CI_upper" = conf.high)
 ```
-
 Now run prop.test for each of the cities in your dataset, and extract both the proportion of unsolved homicides and the confidence interval for each. Do this within a “tidy” pipeline, making use of purrr::map, purrr::map2, list columns and unnest as necessary to create a tidy dataframe with estimated proportions and CIs for each city.
 
 ```{r}
 city_homicides %>% 
-  mutate(newcol = map2(n_unsolved_homicides, n_homicides,  ~ prop.test(.x, .y) %>% 
+  mutate(ptest = map2(n_unsolved_homicides, n_homicides,  ~ prop.test(.x, .y) %>% 
                   {tibble(estimate = .[["estimate"]],
                          CI_lower = .[["conf.int"]][[1]], 
                          CI_upper = .[["conf.int"]][[2]])})) %>%
@@ -96,6 +94,7 @@ Create a plot that shows the estimates and CIs for each city – check out geom_
 
 ```{r}
 
+#%>% arrange(desc(n_homicides))
 ```
 
 
