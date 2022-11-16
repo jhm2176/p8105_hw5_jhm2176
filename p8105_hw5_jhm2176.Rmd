@@ -7,11 +7,10 @@ output: github_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
-library(rvest)
-library(readxl)
 library(ggridges)
 library(patchwork)
 library(readr)
+library(p8105.datasets)
 
 knitr::opts_chunk$set(
 	echo = TRUE,
@@ -42,7 +41,7 @@ homicides =
 
 **Description:** The homicides dataset displays data on homicides in 50 large cities across the U.S. This dataset contains `r nrow(homicides)` rows and `r ncol(homicides)` columns, with each row representing a single reported homicide. Variables provide information about the police report, the victim, and the status of the investigation. Specifically, variables include: report id, report date, victim last name, victim first name, victim race, victim sex, victim age, city, state, latitude, longitude, and disposition. In total, `r homicides %>% filter(disposition == "Closed without arrest" | disposition == "Open/No arrest") %>% nrow` of the `r homicides %>% nrow` homicides in this dataset are unsolved.
 
-Next, I will tidy the data. The following code uses `mutate` to update variables to appropriate types, convert reported_date into a more readable format, correct the capitalization of victim_first and victim_last names, and create a city_state variable that returns both city and state (e.g. “Baltimore, MD”). It also fixes one observation incorrectly noted as occuring in "Tulsa, AL," using `mutate` to update this to "Tulsa, OK" since there is no Tulsa in Alabama. 
+Next, I will tidy the data. The following code uses `mutate` to update variables to appropriate types, convert reported_date into a more readable format (YYY-MM-DD), correct the capitalization of victim_first and victim_last names, and create a city_state variable that returns both city and state (e.g. “Baltimore, MD”). It also fixes one observation incorrectly noted as occurring in "Tulsa, AL," using `mutate` and `case_when` to update this to "Tulsa, OK" since there is no Tulsa in Alabama. 
 
 ```{r}
 homicides =
@@ -60,7 +59,7 @@ homicides =
          state = as.factor(state)) #character to factor
 ```
 
-Unsolved homicides are defined as homicides for which the disposition is “Closed without arrest” or “Open/No arrest”. With the new variable city_state, this code uses `group_by` and `summarize` to summarize within cities and obtain the total number of homicides and the number of unsolved homicides in each location. 
+Unsolved homicides are defined as homicides for which the disposition is “Closed without arrest” or “Open/No arrest”. Using the new variable city_state, this code uses `group_by` and `summarize` to summarize within cities and obtain the total number of homicides and the number of unsolved homicides in each location. 
 
 ```{r}
 city_homicides =
@@ -92,6 +91,7 @@ city_tests =
   select(city_state, estimate, "CI_lower" = conf.low, "CI_upper" = conf.high)
 ```
 
+### Plots
 Finally, the following code uses `geom_point` and `geom_errorbar` to create a plot showing the proportion estimates and confidence intervals for each city. Cities are arranged in ascending order of proportion of unsolved homicides.
 
 ```{r}
@@ -99,7 +99,7 @@ city_tests %>%
   ggplot(aes(x = reorder(city_state, +estimate), y = estimate)) +
   geom_point(show.legend = FALSE) +
   geom_errorbar(aes(ymin = CI_lower, ymax = CI_upper)) +
-  theme(axis.text.x = element_text(angle = 60)) +
+  theme(axis.text.x = element_text(angle = 90)) +
   labs(
     title = "Proportoin of unsolved homicides by city",
     x = "City",
@@ -109,7 +109,7 @@ city_tests %>%
 ## Problem 3
 When designing an experiment or analysis, a common question is whether it is likely that a true effect will be detected – put differently, whether a false null hypothesis will be rejected. The probability that a false null hypothesis is rejected is referred to as power, and it depends on several factors, including: the sample size; the effect size; and the error variance. In this problem, I will conduct a simulation to explore power in a one-sample t-test.
 
-First, I will generate 5000 datasets from the model x ∼ Normal [ μ , σ ] and save the mean estimates and p-values ( H : μ = 0 at α = 0.05 ) for each. I will fix n = 30, σ = 5, and set μ = 0. I will name μ as "s_mu" (sample mean) so as not to be confused with the t-test function input "mu".
+First, I will generate 5000 datasets from the model x ∼ Normal [ μ , σ ] and save the mean estimates and p-values ( H : μ = 0 at α = 0.05 ) for each. I will fix n = 30, σ = 5, and set μ = 0. I will name μ as "s_mu" (sample mean) so as not to be confused with the `t.test` function input "mu".
 
 The following code creates a function to simulate data from a normal distribution with the given sample size, mean, and standard deviation values and conducts a one-sample t-test for each, with the null hypothesis H : μ = 0 at α = 0.05.
 
@@ -126,7 +126,7 @@ sim_mean_p = function(n = 30, s_mu, sigma = 5) {
 }
 ```
 
-This code generates 5000 datasets, maps my function `sim_mean_p` on each dataset, and saves the mu hat estimate and p-value for each. The resulting data frame "sim_df" contains estimates and p-values for each of the 5000 datasets.
+This code generates 5000 datasets, maps my function `sim_mean_p` on each dataset, and saves the mean estimate and p-value for each. The resulting data frame "sim_df" contains estimates and p-values for each of the 5000 datasets.
 
 ```{r}
 sim_df_1 = 
@@ -148,7 +148,7 @@ sim_df_2 =
   select(s_mu, estimate, p.value)
 ```
 
-Finally, I will bind sim_df_2 with sim_df_1, where μ = 0, so that all values are included in the same data frame. To do so, I will need to add a "s_mu" variable to sim_df_1 so that all variables match sim_df_2. The resulting sim_df dataframe includes estimates and p-values for 35000 datasets -- 5000 for each μ = {0,1,2,3,4,5,6}.
+Finally, I will bind sim_df_2 with sim_df_1, where μ = 0, so that all values are included in the same data frame. To do so, I will need to add a "s_mu" variable to sim_df_1 so that all variables match sim_df_2 and so that there is a clear way to distinguish datasets. The resulting sim_df dataframe includes estimates and p-values for 35000 datasets -- 5000 for each μ = {0,1,2,3,4,5,6}.
  
 ```{r}
 sim_df_1 = 
@@ -165,12 +165,12 @@ The following code creates a plot showing the proportion of times the null was r
 
 ```{r}
 power_df = 
-  sim_df_2 %>%
+  sim_df %>%
   mutate(decision = ifelse(p.value < 0.05, "reject", "fail_to_reject")) %>%
   group_by(s_mu, decision) %>%
   summarize(count = n()) %>%
   pivot_wider(names_from = decision, values_from = count) %>%
-  mutate(power = reject / 50)
+  mutate(power = reject / 500)
 
 power_df %>%
   ggplot(aes(x = s_mu, y = power)) + 
@@ -178,22 +178,28 @@ power_df %>%
 ```
 **Description:** This plot shows a strong, positive association between effect size and power. As the effect size -- the true difference between the sample mean (s_mu) and the null mean (=0) -- increases, power increases. There also appears to be a threshold. Increases in power are significant as the sample mean approaches 4 but minimal as it exceeds 4. #ADD TEXT#
 
-This code creates i) a plot showing the average estimate of μ̂  on the y axis and the true value of μ on the x axis and ii) a plot (or overlay on the first) showing the average estimate of μ̂  only in samples for which the null was rejected on the y axis and the true value of μ on the x axis.
+This code creates i) a plot showing the average estimate of μ̂  on the y axis and the true value of μ on the x axis and ii) a plot (or overlay on the first) showing the average estimate of μ̂ on the y axis and the true value of μ on the x axis only for samples for which the null was rejected .
 
 ```{r}
-sim_df_2 %>%
+sim_df %>%
   group_by(s_mu) %>%
   summarize(avg_estimate = mean(estimate)) %>%
   ggplot(aes(x = s_mu, y = avg_estimate)) +
-  geom_point() + geom_line()
+  geom_point() + geom_line() +
+  labs(
+    x = "True mean",
+    y = "Mean estimate")
  
 
-sim_df_2 %>%
+sim_df %>%
   filter(p.value < 0.05) %>%
   group_by(s_mu) %>%
   summarize(avg_estimate = mean(estimate)) %>%
   ggplot(aes(x = s_mu, y = avg_estimate)) +
-  geom_point() + geom_line()
+  geom_point() + geom_line() +
+  labs(
+    x = "True mean",
+    y = "Mean estimate")
   
 ```
 
