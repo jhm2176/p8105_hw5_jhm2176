@@ -80,8 +80,7 @@ This problem uses data gathered by the Washington Post on homicides across the U
 
 ```{r}
 homicides =
-  read_csv("./data/homicide-data.csv") %>%
-  janitor::clean_names()
+  read_csv("./data/homicide-data.csv")
 ```
 
 **Description:** The homicides dataset displays data on homicides in 50 large cities across the U.S. This dataset contains `r nrow(homicides)` rows and `r ncol(homicides)` columns, with each row representing a single reported homicide. Variables provide information about the police report, the victim, and the status of the investigation. Specifically, variables include: report id, report date, victim last name, victim first name, victim race, victim sex, victim age, city, state, latitude, longitude, and disposition. In total, `r homicides %>% filter(disposition == "Closed without arrest" | disposition == "Open/No arrest") %>% nrow` of the `r homicides %>% nrow` homicides in this dataset are unsolved.
@@ -90,7 +89,7 @@ Next, I will tidy the data. The following code uses `mutate` to update variables
 
 ```{r}
 homicides =
-  read_csv("./data/homicide-data.csv") %>%
+  homicides %>%
   janitor::clean_names() %>%
   mutate(state = case_when(state == "AL" & city == "Tulsa" ~ "OK", TRUE ~ state),
          city_state = as.factor(str_c(city, state, sep = ", ")), #creates new variable
