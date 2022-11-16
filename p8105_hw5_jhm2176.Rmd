@@ -31,7 +31,7 @@ scale_fill_discrete = scale_fill_viridis_d
 
 ## Problem 1
 
-The text and code for problem 1 is from the solutions posted on the course website:
+The text and code for problem 1 comes from the solutions posted on the course website:
 
 The code chunk below imports the data in individual spreadsheets contained in `./data/zip_data/`. To do this, I create a dataframe that includes the list of all files in that directory and the complete path to each file. As a next step, I `map` over paths and import data using the `read_csv` function. Finally, I `unnest` the result of `map`.
 
@@ -219,11 +219,14 @@ power_df =
 
 power_df %>%
   ggplot(aes(x = s_mu, y = power)) + 
-  geom_point() + geom_line()
+  geom_point() + geom_line() +
+  labs(
+    x = "True mean",
+    y = "Power")
 ```
-**Description:** This power curve shows a positive association between effect size and power. As the effect size -- the extent of the departure from the null (μ=0) -- increases, power increases. In other words, as μ increases from 0, so does our power, until it reaches 1.0 where it remains. 
+**Description:** This power curve shows a positive association between effect size and power. As the effect size -- the extent of the departure from the null (μ=0) -- increases, power increases. In other words, as μ increases from 0, so does our power, until it reaches 1.0 (μ=5) where it remains in our plot. 
 
-This code creates a plot showing i) the average estimate of μ̂  on the y axis and the true value of μ on the x axis and ii) the average estimate of μ̂ on the y axis and the true value of μ on the x axis only for samples for which the null was rejected .
+This next code chunk creates a plot showing i) the average estimate of μ̂  on the y axis and the true value of μ on the x axis and ii) the average estimate of μ̂ on the y axis and the true value of μ on the x axis only for samples for which the null was rejected .
 
 ```{r}
 plot_i =
