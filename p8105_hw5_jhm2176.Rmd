@@ -133,6 +133,8 @@ city_tests =
   mutate(p_test = map2(n_unsolved, n_homicides, ~ prop.test(.x, .y) %>%
                         broom::tidy())) %>% unnest() %>%
   select(city_state, estimate, "CI_lower" = conf.low, "CI_upper" = conf.high)
+
+city_tests
 ```
 
 ### Plots
@@ -145,7 +147,7 @@ city_tests %>%
   geom_errorbar(aes(ymin = CI_lower, ymax = CI_upper)) +
   theme(axis.text.x = element_text(angle = 90)) +
   labs(
-    title = "Proportoin of unsolved homicides by city",
+    title = "Proportion of unsolved homicides by city",
     x = "City",
     y = "Estimate")
 ```
@@ -170,7 +172,7 @@ sim_mean_p = function(n = 30, s_mu, sigma = 5) {
 }
 ```
 
-This code generates 5000 datasets, maps my function `sim_mean_p` on each dataset, and saves the mean estimate and p-value for each. The resulting data frame "sim_df" contains estimates and p-values for each of the 5000 datasets.
+This code generates 5000 datasets given μ = 0, maps my function `sim_mean_p` on each dataset, and saves the mean estimate and p-value for each. The resulting data frame "sim_df" contains estimates and p-values for each of these datasets.
 
 ```{r}
 sim_df_1 = 
@@ -192,7 +194,7 @@ sim_df_2 =
   select(s_mu, estimate, p.value)
 ```
 
-Finally, I will bind sim_df_2 with sim_df_1, where μ = 0, so that all values are included in the same data frame. To do so, I will need to add a "s_mu" variable to sim_df_1 so that all variables match sim_df_2 and so that there is a clear way to distinguish datasets. The resulting sim_df dataframe includes estimates and p-values for 35000 datasets -- 5000 for each μ = {0,1,2,3,4,5,6}.
+Finally, I will bind sim_df_2 with sim_df_1 so that all datasets are included in the same data frame. To do so, I will need to add a "s_mu" variable to sim_df_1 so that all variables match sim_df_2 and so that there is an easy way to distinguish datasets. The resulting sim_df dataframe includes estimates and p-values for 35000 datasets -- 5000 for each μ = {0,1,2,3,4,5,6}.
  
 ```{r}
 sim_df_1 = 
