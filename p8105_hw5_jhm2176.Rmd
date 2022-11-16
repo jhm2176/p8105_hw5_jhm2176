@@ -42,13 +42,14 @@ homicides =
 
 **Description:** The homicides dataset displays data on homicides in 50 large cities across the U.S. This dataset contains `r nrow(homicides)` rows and `r ncol(homicides)` columns, with each row representing a single reported homicide. Variables provide information about the police report, the victim, and the status of the investigation. Specifically, variables include: report id, report date, victim last name, victim first name, victim race, victim sex, victim age, city, state, latitude, longitude, and disposition. In total, `r homicides %>% filter(disposition == "Closed without arrest" | disposition == "Open/No arrest") %>% nrow` of the `r homicides %>% nrow` homicides in this dataset are unsolved.
 
-Next, I will tidy the data. The following code uses `mutate` to update variables to appropriate types, convert reported_date into a more readable format, correct the capitalization of victim_first and victim_last names, and create a city_state variable that returns both city and state (e.g. “Baltimore, MD”). It also fixes one observation incorrectly noted as "Tulsa, AL," recoding it to "Tulsa, OK" since there is no Tulsa in Alabama. 
+Next, I will tidy the data. The following code uses `mutate` to update variables to appropriate types, convert reported_date into a more readable format, correct the capitalization of victim_first and victim_last names, and create a city_state variable that returns both city and state (e.g. “Baltimore, MD”). It also fixes one observation incorrectly noted as occuring in "Tulsa, AL," using `mutate` to update this to "Tulsa, OK" since there is no Tulsa in Alabama. 
 
 ```{r}
 homicides =
   read_csv("./data/homicide-data.csv") %>%
   janitor::clean_names() %>%
-  mutate(city_state = as.factor(str_c(city, state, sep = ", ")), #creates new variable
+  mutate(state = case_when(state == "AL" & city == "Tulsa" ~ "OK", TRUE ~ state),
+         city_state = as.factor(str_c(city, state, sep = ", ")), #creates new variable
          reported_date = as.Date(as.character(reported_date),"%Y%m%d"), #date format
          victim_age = as.numeric(victim_age), #character to double
          victim_first = str_to_title(victim_first), #fixes all caps
@@ -56,8 +57,7 @@ homicides =
          victim_sex = as.factor(victim_sex), #character to factor
          victim_race = as.factor(victim_race), #character to factor
          city = as.factor(city), #character to factor
-         state = as.factor(state), #character to factor
-         city_state = recode(city_state, "Tulsa, AL" = "Tulsa, OK")) #CHECK DISC BOARD TO BE SURE OF THIS
+         state = as.factor(state)) #character to factor
 ```
 
 Unsolved homicides are defined as homicides for which the disposition is “Closed without arrest” or “Open/No arrest”. With the new variable city_state, this code uses `group_by` and `summarize` to summarize within cities and obtain the total number of homicides and the number of unsolved homicides in each location. 
