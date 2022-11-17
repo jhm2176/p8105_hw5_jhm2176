@@ -155,7 +155,7 @@ city_tests %>%
 ## Problem 3
 When designing an experiment or analysis, a common question is whether it is likely that a true effect will be detected – put differently, whether a false null hypothesis will be rejected. The probability that a false null hypothesis is rejected is referred to as power, and it depends on several factors, including: the sample size; the effect size; and the error variance. In this problem, I will conduct a simulation to explore power in a one-sample t-test.
 
-First, I will generate 5000 datasets from the model x ∼ Normal [ μ , σ ] and save the mean estimates and p-values ( H : μ = 0 at α = 0.05 ) for each. I will fix n = 30, σ = 5, and set μ = 0. I will name μ as "s_mu" (sample mean) so as not to be confused with the `t.test` function input "mu".
+First, I will generate 5000 datasets from the model x ∼ Normal [ μ , σ ] and save the mean estimates and p-values ( H : μ = 0 at α = 0.05 ) for each. I will fix n = 30, σ = 5, and set μ = 0. I will name μ as "s_mu" so as not to be confused with the `t.test` function input "mu".
 
 The following code creates a function to simulate data from a normal distribution with the given sample size, mean, and standard deviation values and conducts a one-sample t-test for each, with the null hypothesis H : μ = 0 at α = 0.05.
 
@@ -172,10 +172,10 @@ sim_mean_p = function(n = 30, s_mu, sigma = 5) {
 }
 ```
 
-This code generates 5000 datasets given μ = 0, maps my function `sim_mean_p` on each dataset, and saves the mean estimate and p-value for each. The resulting data frame "sim_df" contains estimates and p-values for each of these datasets.
+This code generates 5000 datasets given μ = 0, maps my function `sim_mean_p` on each dataset, and saves the mean estimate and p-value for each. The resulting data frame "sim_df_0" contains estimates and p-values for each of these datasets.
 
 ```{r}
-sim_df_1 = 
+sim_df_0 = 
   rerun(500, sim_mean_p(s_mu = 0)) %>% #replace with n=5000
   bind_rows() %>% 
   select(estimate, p.value)
@@ -184,7 +184,7 @@ sim_df_1 =
 The following code repeats the above for μ = {1,2,3,4,5,6} and saves all estimates and p-values to the resulting data frame "sim_df_2."
 
 ```{r}
-sim_df_2 = 
+sim_df_1 = 
   tibble(s_mu = c(1:6)) %>% 
   mutate(
     output_lists = map(.x = s_mu, ~rerun(500, sim_mean_p(s_mu = .x))), #replace with 5000
@@ -194,24 +194,13 @@ sim_df_2 =
   select(s_mu, estimate, p.value)
 ```
 
-Finally, I will bind sim_df_2 with sim_df_1 so that all datasets are included in the same data frame. To do so, I will need to add a "s_mu" variable to sim_df_1 so that all variables match sim_df_2 and so that there is an easy way to distinguish datasets. The resulting sim_df dataframe includes estimates and p-values for 35000 datasets -- 5000 for each μ = {0,1,2,3,4,5,6}.
- 
-```{r}
-sim_df_1 = 
-  sim_df_1 %>%
-  mutate(s_mu = 0)
-
-sim_df = bind_rows(sim_df_1, sim_df_2) %>% 
-  relocate(s_mu)
-```
-
 ### Plots
 
 The following code creates a plot showing the proportion of times the null was rejected (the power of the test) on the y axis and the true value of μ on the x axis.
 
 ```{r}
 power_df = 
-  sim_df %>%
+  sim_df_1 %>%
   mutate(decision = ifelse(p.value < 0.05, "reject", "fail_to_reject")) %>%
   group_by(s_mu, decision) %>%
   summarize(count = n()) %>%
@@ -225,19 +214,19 @@ power_df %>%
     x = "True mean",
     y = "Power")
 ```
-**Description:** This power curve shows a positive association between effect size and power. As the effect size -- the extent of the departure from the null (μ=0) -- increases, power increases. In other words, as μ increases from 0, so does our power, until it reaches 1.0 (μ=5) where it remains in our plot. 
+**Description:** This power curve shows a positive association between effect size and power. As the effect size -- the extent of the departure from the null (μ=0) -- increases, power increases. In other words, as μ increases from 0, so does our power. When power reaches 1.0 (μ=5 in our plot), the curve flattens since 1 is the maximum value for power.
 
 This next code chunk creates a plot showing i) the average estimate of μ̂  on the y axis and the true value of μ on the x axis and ii) the average estimate of μ̂ on the y axis and the true value of μ on the x axis only for samples for which the null was rejected .
 
 ```{r}
 plot_i =
-  sim_df %>%
+  sim_df_1 %>%
   group_by(s_mu) %>%
   summarize(avg_estimate = mean(estimate)) %>%
   mutate(type = "all")
 
 plot_ii =
-  sim_df %>%
+  sim_df_1 %>%
   filter(p.value < 0.05) %>%
   group_by(s_mu) %>%
   summarize(avg_estimate = mean(estimate)) %>%
@@ -247,13 +236,13 @@ plot_iii = bind_rows(plot_i, plot_ii)
 
 plot_iii %>%
   ggplot(aes(x = s_mu, y = avg_estimate, color = type, alpha = 0.5)) +
-  geom_point(aes(size = 0.5)) + geom_line() +
+  geom_point() + geom_line() +
   guides(alpha = "none", size = "none") +
   labs(
-    x = "True mean",
+    x = "True population mean",
     y = "Mean estimate")
 ```
 
 **Is the sample average of μ̂  across tests for which the null is rejected approximately equal to the true value of μ? Why or why not?**
 
-This plot shows that the sample average of μ̂across tests for which the null is rejected is only approximately equal to the true value of μ when the true mean is 0 (null: μ=0) or greater than 2. The sample average deviates from the true mean when the true mean is 1 or 2
+This plot shows that the sample average of μ̂across tests for which the null is rejected is only approximately equal to the true value of μ when the true μ is greater than 3. As the true population mean increases, the sample average across tests for which the null is rejected gets closer to the true population mean. This is because power increases with effect size.
