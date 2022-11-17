@@ -176,7 +176,7 @@ This code generates 5000 datasets given μ = 0, maps my function `sim_mean_p` on
 
 ```{r}
 sim_df_0 = 
-  rerun(500, sim_mean_p(s_mu = 0)) %>% #replace with n=5000
+  rerun(5000, sim_mean_p(s_mu = 0)) %>%
   bind_rows() %>% 
   select(estimate, p.value)
 ```
@@ -187,7 +187,7 @@ The following code repeats the above for μ = {1,2,3,4,5,6} and saves all estima
 sim_df_1 = 
   tibble(s_mu = c(1:6)) %>% 
   mutate(
-    output_lists = map(.x = s_mu, ~rerun(500, sim_mean_p(s_mu = .x))), #replace with 5000
+    output_lists = map(.x = s_mu, ~rerun(5000, sim_mean_p(s_mu = .x))),
     estimate_dfs = map(output_lists, bind_rows)) %>% 
   select(-output_lists) %>% 
   unnest(estimate_dfs) %>%
@@ -205,7 +205,7 @@ power_df =
   group_by(s_mu, decision) %>%
   summarize(count = n()) %>%
   pivot_wider(names_from = decision, values_from = count) %>%
-  mutate(power = reject / 500)
+  mutate(power = reject / 5000)
 
 power_df %>%
   ggplot(aes(x = s_mu, y = power)) + 
